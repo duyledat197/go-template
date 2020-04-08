@@ -9,20 +9,22 @@ import (
 	"syscall"
 
 	"github.com/go-kit/kit/log"
+	"github.com/stamp-server/config"
 	"github.com/stamp-server/inmem"
 	"github.com/stamp-server/models"
 	"github.com/stamp-server/mongo"
 	"github.com/stamp-server/service/auth"
 	"github.com/stamp-server/service/user"
+	"github.com/stamp-server/service/wallet"
 	httpService "github.com/stamp-server/transport/http"
 	"gopkg.in/mgo.v2"
 )
 
 const (
-	defaultPort = "8080"
+	defaultPort = config.PORT
 	// defaultRoutingServiceURL = "http://localhost:7878"
-	defaultMongoDBURL = "127.0.0.1"
-	defaultDBName     = "stamp"
+	defaultMongoDBURL = config.MONGODBURL
+	defaultDBName     = config.DBNAME
 )
 
 func main() {
@@ -48,10 +50,12 @@ func main() {
 
 	// Setup repositories
 	var (
-		userRepo models.UserRepository
+		userRepo   models.UserRepository
+		walletRepo models.WalletRepository
 	)
 	if *inmemory {
 		userRepo = inmem.NewUserRepository()
+		// walletRepo = inmem.NewWalletRepository()
 	} else {
 		session, err := mgo.Dial(*mongoDBURL)
 		if err != nil {
@@ -61,8 +65,9 @@ func main() {
 
 		session.SetMode(mgo.Monotonic, true)
 		userRepo = mongo.NewUserRepository(*databaseName, session, "user")
+		walletRepo = mongo.NewWalletRepository(*databaseName, session, "wallet")
 	}
-
+	walletService := wallet.NewService(walletRepo, userRepo)
 	userService := user.NewService(userRepo)
 	authService := auth.NewService(userRepo)
 	var h http.Handler
@@ -70,6 +75,7 @@ func main() {
 		h = httpService.NewHTTPHandler(
 			userService,
 			authService,
+			walletService,
 			logger,
 		)
 	}

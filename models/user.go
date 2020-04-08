@@ -9,10 +9,8 @@ import (
 // User ...
 type User struct {
 	ID                 string `bson:"_id"`
-	UserName           string `bson:"userName"`
+	Email              string `bson:"email"`
 	HashedPassword     string `bson:"hashedPassword"`
-	Name               string `bson:"name"`
-	Address            string `bson:"address"`
 	StampCreatedAmount int    `bson:"stampCreatedAmount"`
 }
 
@@ -31,7 +29,7 @@ func IsCorrectPassword(password, hash string) bool {
 // UserRepository ...
 type UserRepository interface {
 	Create(user *User) error
-	FindByUserName(userName string) (*User, error)
+	FindByEmail(email string) (*User, error)
 	FindByUserID(userID string) (*User, error)
 	FindAll() ([]*User, error)
 	Update(userID string, user *User) error
@@ -44,5 +42,11 @@ var ErrUnknowUser = errors.New("unknown user")
 // ErrUserAlreadyExist ...
 var ErrUserAlreadyExist = errors.New("user already exist")
 
-// ErrWrongUserNameOrPassword ...
-var ErrWrongUserNameOrPassword = errors.New("wrong user name or password")
+// ErrWrongEmailOrPassword ...
+var ErrWrongEmailOrPassword = errors.New("wrong email or password")
+
+// ErrInvalidEmail ...
+var ErrInvalidEmail = errors.New("invalid email")
+
+// ErrInvalidPassword ...
+var ErrInvalidPassword = errors.New("password must in 8 - 32 characters")

@@ -1,12 +1,15 @@
 package auth
 
 import (
+	"github.com/google/uuid"
 	"github.com/stamp-server/models"
+	"github.com/stamp-server/utils"
+	"github.com/stamp-server/utils/helper"
 )
 
 // Service interface
 type Service interface {
-	Login(userName string, password string) (models.User, string, error)
+	Login(email, password string) (models.User, string, error)
 	Register(user *models.User, password string) error
 }
 
@@ -14,27 +17,47 @@ type service struct {
 	userRepo models.UserRepository
 }
 
-func (s *service) Login(userName string, password string) (models.User, string, error) {
-	user, err := s.userRepo.FindByUserName(userName)
+func (s *service) Login(email, password string) (models.User, string, error) {
+	isEmail := helper.IsEmail(email)
+	if isEmail != true {
+		return models.User{}, "", models.ErrInvalidEmail
+	}
+	user, err := s.userRepo.FindByEmail(email)
 	if err != nil {
 		return models.User{}, "", err
 	}
-	match := models.IsCorrectPassword(password, user.HashedPassword)
-	if match != true {
-		return models.User{}, "", models.ErrWrongUserNameOrPassword
+	isCorrect := models.IsCorrectPassword(password, user.HashedPassword)
+	if isCorrect != true {
+		return models.User{}, "", models.ErrWrongEmailOrPassword
 	}
-	return *user, "", nil
+
+	tokenString, err := utils.GenerateToken(user.ID)
+	if err != nil {
+		return models.User{}, "", err
+	}
+	return *user, tokenString, nil
 }
 
 func (s *service) Register(user *models.User, password string) error {
-	_, err := s.userRepo.FindByUserName(user.UserName)
+	isEmail := helper.IsEmail(user.Email)
+	if isEmail != true {
+		return models.ErrInvalidEmail
+	}
+	isPassword := helper.IsPassword(password)
+	if isPassword != true {
+		return models.ErrInvalidPassword
+	}
+	_, err := s.userRepo.FindByEmail(user.Email)
 	if err == nil {
 		return models.ErrUserAlreadyExist
 	}
 	if err != models.ErrUnknowUser {
 		return err
 	}
+
 	user.HashedPassword, err = models.HashPassword(password)
+	uuidNew, err := uuid.NewUUID()
+	user.ID = uuid.UUID.String(uuidNew)
 	if err != nil {
 		return err
 	}

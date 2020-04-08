@@ -7,7 +7,7 @@ import (
 // Service interface
 type Service interface {
 	CreateUser(user models.User) error
-	GetUserByUserName(userName string) (models.User, error)
+	GetUserByEmail(email string) (models.User, error)
 	GetUserByID(userID string) (models.User, error)
 	GetListUser() ([]models.User, error)
 	UpdateUser(userID string, user models.User) error
@@ -23,8 +23,8 @@ func (s *service) CreateUser(user models.User) error {
 	return err
 }
 
-func (s *service) GetUserByUserName(userName string) (models.User, error) {
-	user, err := s.userRepo.FindByUserName(userName)
+func (s *service) GetUserByEmail(email string) (models.User, error) {
+	user, err := s.userRepo.FindByEmail(email)
 	if err != nil {
 		return models.User{}, err
 	}

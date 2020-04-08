@@ -13,7 +13,7 @@ func (r *userRepository) Create(user *models.User) error {
 	return nil
 }
 
-func (r *userRepository) FindByUserName(userName string) (*models.User, error) {
+func (r *userRepository) FindByEmail(email string) (*models.User, error) {
 	return nil, nil
 }
 

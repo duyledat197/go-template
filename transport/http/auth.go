@@ -29,11 +29,9 @@ func (h *authHandler) router() chi.Router {
 func (h *authHandler) register(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	var request struct {
-		UserName        string `json:"userName"`
+		Email           string `json:"email"`
 		Password        string `json:"password"`
 		ConfirmPassword string `json:"confirmPassword"`
-		Address         string `json:"address"`
-		Name            string `json:"name"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -43,9 +41,7 @@ func (h *authHandler) register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	u := models.User{
-		UserName: request.UserName,
-		Address:  request.Address,
-		Name:     request.Name,
+		Email: request.Email,
 	}
 
 	err := h.authService.Register(&u, request.Password)
@@ -72,7 +68,7 @@ func (h *authHandler) register(w http.ResponseWriter, r *http.Request) {
 func (h *authHandler) login(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	var request struct {
-		UserName string `json:"userName"`
+		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -80,7 +76,7 @@ func (h *authHandler) login(w http.ResponseWriter, r *http.Request) {
 		encodeError(ctx, err, w)
 		return
 	}
-	user, token, err := h.authService.Login(request.UserName, request.Password)
+	user, token, err := h.authService.Login(request.Email, request.Password)
 	// if user exist error equal null
 	if err != nil {
 		encodeError(ctx, err, w)
@@ -88,13 +84,13 @@ func (h *authHandler) login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var response = struct {
-		User   models.User `json:"user"`
-		Token  string      `json:"token"`
-		Status string      `json:"status"`
+		User    models.User `json:"user"`
+		Token   string      `json:"accessToken"`
+		Success bool        `json:"success"`
 	}{
-		User:   user,
-		Token:  token,
-		Status: "success",
+		User:    user,
+		Token:   token,
+		Success: true,
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")

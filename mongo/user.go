@@ -21,13 +21,13 @@ func (r *userRepository) Create(user *models.User) error {
 	return err
 }
 
-func (r *userRepository) FindByUserName(userName string) (*models.User, error) {
+func (r *userRepository) FindByEmail(email string) (*models.User, error) {
 	sess := r.session.Copy()
 	defer sess.Close()
 
 	c := sess.DB(r.db).C(r.collectionName)
 	var result models.User
-	if err := c.Find(bson.M{"userName": userName}).One(&result); err != nil {
+	if err := c.Find(bson.M{"email": email}).One(&result); err != nil {
 		if err == mgo.ErrNotFound {
 			return nil, models.ErrUnknowUser
 		}
