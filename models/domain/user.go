@@ -9,9 +9,9 @@ import (
 
 // User ...
 type User struct {
-	ID             primitive.ObjectID `bson:"_id,omitempty"`
-	Email          string             `bson:"email"`
-	HashedPassword string             `bson:"hashedPassword"`
+	ID             primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	Email          string             `bson:"email" json:"email"`
+	HashedPassword string             `bson:"hashedPassword" json:"hashedPassword"`
 }
 
 // HashPassword : hash password using crypto
