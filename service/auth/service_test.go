@@ -3,7 +3,7 @@ package auth
 import (
 	"testing"
 
-	"github.com/stamp-server/models"
+	"github.com/duyledat197/go-template/models/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -14,45 +14,45 @@ type userLoginRequest struct {
 }
 
 func TestRegister_Service_InvalidEmail(t *testing.T) {
-	var userRegister models.User = models.User{
+	var userRegister domain.User = domain.User{
 		Email: "test002",
 	}
 	userRepo := &mockUserRepository{}
 	service := NewService(userRepo)
 	err := service.Register(&userRegister, "password")
-	assert.Equal(t, models.ErrInvalidEmail, err)
+	assert.Equal(t, domain.ErrInvalidEmail, err)
 }
 
 func TestRegister_Service_InvalidPassword(t *testing.T) {
-	var userRegister models.User = models.User{
+	var userRegister domain.User = domain.User{
 		Email: "test002@yopmail.com",
 	}
 	userRepo := &mockUserRepository{}
 	service := NewService(userRepo)
 	err := service.Register(&userRegister, "")
-	assert.Equal(t, models.ErrInvalidPassword, err)
+	assert.Equal(t, domain.ErrInvalidPassword, err)
 }
 
 func TestRegister_Service_ExistEmail(t *testing.T) {
-	var userRegister models.User = models.User{
+	var userRegister domain.User = domain.User{
 		Email: "test001@yopmail.com",
 	}
 	userRepo := &mockUserRepository{}
 	service := NewService(userRepo)
-	userRepo.On("Create", &userRegister).Return(models.ErrUserAlreadyExist, nil)
+	userRepo.On("Create", &userRegister).Return(domain.ErrUserAlreadyExist, nil)
 	userRepo.On("FindByEmail", userRegister.Email).Return(&userRegister, nil, nil)
 	err := service.Register(&userRegister, "password")
-	assert.Equal(t, models.ErrUserAlreadyExist, err)
+	assert.Equal(t, domain.ErrUserAlreadyExist, err)
 }
 
 func TestRegister_Service_Success(t *testing.T) {
-	var userRegister models.User = models.User{
+	var userRegister domain.User = domain.User{
 		Email: "test002@yopmail.com",
 	}
 	userRepo := &mockUserRepository{}
 	service := NewService(userRepo)
 	userRepo.On("Create", &userRegister).Return(nil, nil)
-	userRepo.On("FindByEmail", userRegister.Email).Return(nil, models.ErrUnknowUser, nil)
+	userRepo.On("FindByEmail", userRegister.Email).Return(nil, domain.ErrUnknowUser, nil)
 	err := service.Register(&userRegister, "password")
 	assert.Equal(t, nil, err)
 }
@@ -65,8 +65,8 @@ func TestLogin_Service_InvalidEmail(t *testing.T) {
 	userRepo := &mockUserRepository{}
 	service := NewService(userRepo)
 	user, token, err := service.Login(userLogin.Email, userLogin.Password)
-	assert.Equal(t, models.ErrInvalidEmail, err)
-	assert.Equal(t, models.User{}, user)
+	assert.Equal(t, domain.ErrInvalidEmail, err)
+	assert.Equal(t, domain.User{}, user)
 	assert.Equal(t, "", token)
 }
 
@@ -78,8 +78,8 @@ func TestLogin_Service_EmptyEmail(t *testing.T) {
 	userRepo := &mockUserRepository{}
 	service := NewService(userRepo)
 	user, token, err := service.Login(userLogin.Email, userLogin.Password)
-	assert.Equal(t, models.ErrInvalidEmail, err)
-	assert.Equal(t, models.User{}, user)
+	assert.Equal(t, domain.ErrInvalidEmail, err)
+	assert.Equal(t, domain.User{}, user)
 	assert.Equal(t, "", token)
 }
 
@@ -91,11 +91,11 @@ func TestLogin_Service_NotExistEmail(t *testing.T) {
 	userRepo := &mockUserRepository{}
 	service := NewService(userRepo)
 
-	userRepo.On("FindByEmail", userLogin.Email).Return(nil, models.ErrUnknowUser, nil)
+	userRepo.On("FindByEmail", userLogin.Email).Return(nil, domain.ErrUnknowUser, nil)
 	user, token, err := service.Login(userLogin.Email, userLogin.Password)
-	assert.Equal(t, models.ErrUnknowUser, err)
+	assert.Equal(t, domain.ErrUnknowUser, err)
 	assert.Equal(t, "", token)
-	assert.Equal(t, models.User{}, user)
+	assert.Equal(t, domain.User{}, user)
 }
 
 func TestLogin_Service_WrongPassword(t *testing.T) {
@@ -104,8 +104,8 @@ func TestLogin_Service_WrongPassword(t *testing.T) {
 		Password: "wrongpassword",
 	}
 	rightPassword := "Test@123"
-	hashPassword, err := models.HashPassword(rightPassword)
-	expectUser := models.User{
+	hashPassword, err := domain.HashPassword(rightPassword)
+	expectUser := domain.User{
 		Email:          userLogin.Email,
 		HashedPassword: hashPassword,
 	}
@@ -113,9 +113,9 @@ func TestLogin_Service_WrongPassword(t *testing.T) {
 	service := NewService(userRepo)
 	userRepo.On("FindByEmail", userLogin.Email).Return(&expectUser, nil, nil)
 	user, token, err := service.Login(userLogin.Email, userLogin.Password)
-	assert.Equal(t, models.ErrWrongEmailOrPassword, err)
+	assert.Equal(t, domain.ErrWrongEmailOrPassword, err)
 	assert.Equal(t, "", token)
-	assert.Equal(t, models.User{}, user)
+	assert.Equal(t, domain.User{}, user)
 }
 
 func TestLogin_Service_Success(t *testing.T) {
@@ -123,8 +123,8 @@ func TestLogin_Service_Success(t *testing.T) {
 		Email:    "test001@yopmail.com",
 		Password: "Test@123",
 	}
-	hashPassword, err := models.HashPassword(userLogin.Password)
-	expectUser := models.User{
+	hashPassword, err := domain.HashPassword(userLogin.Password)
+	expectUser := domain.User{
 		Email:          userLogin.Email,
 		HashedPassword: hashPassword,
 	}
@@ -135,7 +135,7 @@ func TestLogin_Service_Success(t *testing.T) {
 	user, token, err := service.Login(userLogin.Email, userLogin.Password)
 	assert.Equal(t, nil, err)
 	assert.NotEqual(t, "", token)
-	assert.NotEqual(t, models.User{}, user)
+	assert.NotEqual(t, domain.User{}, user)
 }
 
 // mock
@@ -143,19 +143,19 @@ type mockUserRepository struct {
 	mock.Mock
 }
 
-func (m *mockUserRepository) Create(user *models.User) error {
+func (m *mockUserRepository) Create(user *domain.User) error {
 	args := m.Called(user)
 	return args.Error(1)
 }
 
-func (m *mockUserRepository) FindByEmail(email string) (*models.User, error) {
+func (m *mockUserRepository) FindByEmail(email string) (*domain.User, error) {
 	args := m.Called(email)
-	var r0 *models.User
-	if rf, ok := args.Get(0).(func(string) *models.User); ok {
+	var r0 *domain.User
+	if rf, ok := args.Get(0).(func(string) *domain.User); ok {
 		r0 = rf(email)
 	} else {
 		if args.Get(0) != nil {
-			r0 = args.Get(0).(*models.User)
+			r0 = args.Get(0).(*domain.User)
 		}
 	}
 
@@ -168,13 +168,13 @@ func (m *mockUserRepository) FindByEmail(email string) (*models.User, error) {
 
 	return r0, r1
 }
-func (m *mockUserRepository) FindByUserID(userID string) (*models.User, error) {
+func (m *mockUserRepository) FindByUserID(userID string) (*domain.User, error) {
 	return nil, nil
 }
-func (m *mockUserRepository) FindAll() ([]*models.User, error) {
-	return []*models.User{}, nil
+func (m *mockUserRepository) FindAll() ([]*domain.User, error) {
+	return []*domain.User{}, nil
 }
-func (m *mockUserRepository) Update(userID string, user *models.User) error {
+func (m *mockUserRepository) Update(userID string, user *domain.User) error {
 	return nil
 }
 func (m *mockUserRepository) Delete(userID string) error {

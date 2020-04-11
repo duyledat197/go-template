@@ -1,4 +1,4 @@
-PROJECT_NAME := stamp-server
+PROJECT_NAME := duyledat197/go-template
 PKG := github.com/$(PROJECT_NAME)
 build:
 	@go build -i -v $(PKG)/cmd/server

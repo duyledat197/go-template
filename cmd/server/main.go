@@ -8,39 +8,35 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/duyledat197/go-template/config"
+	"github.com/duyledat197/go-template/models/domain"
+	"github.com/duyledat197/go-template/mongo"
+	"github.com/duyledat197/go-template/service/auth"
+	"github.com/duyledat197/go-template/service/user"
+	httpService "github.com/duyledat197/go-template/transport/http"
 	"github.com/go-kit/kit/log"
-	"github.com/stamp-server/config"
-	"github.com/stamp-server/inmem"
-	"github.com/stamp-server/models"
-	"github.com/stamp-server/mongo"
-	"github.com/stamp-server/service/auth"
-	"github.com/stamp-server/service/user"
-	"github.com/stamp-server/service/wallet"
-	httpService "github.com/stamp-server/transport/http"
-	"gopkg.in/mgo.v2"
 )
 
 const (
-	defaultPort = config.PORT
-	// defaultRoutingServiceURL = "http://localhost:7878"
+	defaultPort       = config.PORT
 	defaultMongoDBURL = config.MONGODBURL
 	defaultDBName     = config.DBNAME
 )
 
 func main() {
+	// env variable
 	var (
-		addr = envString("PORT", defaultPort)
-		// rsurl  = envString("ROUTINGSERVICE_URL", defaultRoutingServiceURL)
-		dburl  = envString("MONGODB_URL", defaultMongoDBURL)
-		dbname = envString("DB_NAME", defaultDBName)
-
-		httpAddr = flag.String("http.addr", ":"+addr, "HTTP listen address")
-		// routingServiceURL = flag.String("service.routing", rsurl, "routing service URL")
+		addr         = envString("PORT", defaultPort)
+		dburl        = envString("MONGODB_URL", defaultMongoDBURL)
+		dbname       = envString("DB_NAME", defaultDBName)
+		httpAddr     = flag.String("http.addr", ":"+addr, "HTTP listen address")
 		mongoDBURL   = flag.String("db.url", dburl, "MongoDB URL")
 		databaseName = flag.String("db.name", dbname, "MongoDB database name")
-		inmemory     = flag.Bool("inmem", false, "use in-memory repositories")
+	)
 
-		// ctx = context.Background()
+	// collection name
+	var (
+		USER = "user"
 	)
 	flag.Parse()
 
@@ -50,24 +46,19 @@ func main() {
 
 	// Setup repositories
 	var (
-		userRepo   models.UserRepository
-		walletRepo models.WalletRepository
+		userRepo domain.UserRepository
 	)
-	if *inmemory {
-		userRepo = inmem.NewUserRepository()
-		// walletRepo = inmem.NewWalletRepository()
-	} else {
-		session, err := mgo.Dial(*mongoDBURL)
-		if err != nil {
-			panic(err)
-		}
-		defer session.Close()
-
-		session.SetMode(mgo.Monotonic, true)
-		userRepo = mongo.NewUserRepository(*databaseName, session, "user")
-		walletRepo = mongo.NewWalletRepository(*databaseName, session, "wallet")
+	mongoClient, err := mongo.NewMongoDbClient(*mongoDBURL)
+	if err != nil {
+		panic(err)
 	}
-	walletService := wallet.NewService(walletRepo, userRepo)
+	// defer closeConnection()
+	// Setup collections
+	userColl, err := mongo.NewMongoDbCtxCollectionWithClient(mongoClient, *databaseName, USER)
+	if err != nil {
+		panic(err)
+	}
+	userRepo = mongo.NewUserRepository(userColl)
 	userService := user.NewService(userRepo)
 	authService := auth.NewService(userRepo)
 	var h http.Handler
@@ -75,7 +66,6 @@ func main() {
 		h = httpService.NewHTTPHandler(
 			userService,
 			authService,
-			walletService,
 			logger,
 		)
 	}

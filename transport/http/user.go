@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-chi/chi"
 	kitlog "github.com/go-kit/kit/log"
-	"github.com/stamp-server/service/user"
+	"github.com/duyledat197/go-template/service/user"
 )
 
 type userHandler struct {

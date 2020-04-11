@@ -1,4 +1,4 @@
-module github.com/stamp-server
+module github.com/duyledat197/go-template
 
 go 1.13
 

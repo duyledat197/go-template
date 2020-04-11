@@ -1,17 +1,17 @@
-package models
+package domain
 
 import (
 	"errors"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 )
 
 // User ...
 type User struct {
-	ID                 string `bson:"_id"`
-	Email              string `bson:"email"`
-	HashedPassword     string `bson:"hashedPassword"`
-	StampCreatedAmount int    `bson:"stampCreatedAmount"`
+	ID             primitive.ObjectID `bson:"_id,omitempty"`
+	Email          string             `bson:"email"`
+	HashedPassword string             `bson:"hashedPassword"`
 }
 
 // HashPassword : hash password using crypto

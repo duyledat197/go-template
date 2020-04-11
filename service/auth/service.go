@@ -1,63 +1,62 @@
 package auth
 
 import (
-	"github.com/google/uuid"
-	"github.com/stamp-server/models"
-	"github.com/stamp-server/utils"
-	"github.com/stamp-server/utils/helper"
+	"github.com/duyledat197/go-template/models/domain"
+	"github.com/duyledat197/go-template/utils"
+	"github.com/duyledat197/go-template/utils/helper"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Service interface
 type Service interface {
-	Login(email, password string) (models.User, string, error)
-	Register(user *models.User, password string) error
+	Login(email, password string) (domain.User, string, error)
+	Register(user *domain.User, password string) error
 }
 
 type service struct {
-	userRepo models.UserRepository
+	userRepo domain.UserRepository
 }
 
-func (s *service) Login(email, password string) (models.User, string, error) {
+func (s *service) Login(email, password string) (domain.User, string, error) {
 	isEmail := helper.IsEmail(email)
 	if isEmail != true {
-		return models.User{}, "", models.ErrInvalidEmail
+		return domain.User{}, "", domain.ErrInvalidEmail
 	}
 	user, err := s.userRepo.FindByEmail(email)
 	if err != nil {
-		return models.User{}, "", err
+		return domain.User{}, "", err
 	}
-	isCorrect := models.IsCorrectPassword(password, user.HashedPassword)
+	isCorrect := domain.IsCorrectPassword(password, user.HashedPassword)
 	if isCorrect != true {
-		return models.User{}, "", models.ErrWrongEmailOrPassword
+		return domain.User{}, "", domain.ErrWrongEmailOrPassword
 	}
 
-	tokenString, err := utils.GenerateToken(user.ID)
+	tokenString, err := utils.GenerateToken(user.ID.String())
 	if err != nil {
-		return models.User{}, "", err
+		return domain.User{}, "", err
 	}
 	return *user, tokenString, nil
 }
 
-func (s *service) Register(user *models.User, password string) error {
+func (s *service) Register(user *domain.User, password string) error {
 	isEmail := helper.IsEmail(user.Email)
 	if isEmail != true {
-		return models.ErrInvalidEmail
+		return domain.ErrInvalidEmail
 	}
 	isPassword := helper.IsPassword(password)
 	if isPassword != true {
-		return models.ErrInvalidPassword
+		return domain.ErrInvalidPassword
 	}
 	_, err := s.userRepo.FindByEmail(user.Email)
 	if err == nil {
-		return models.ErrUserAlreadyExist
+		return domain.ErrUserAlreadyExist
 	}
-	if err != models.ErrUnknowUser {
+	if err != domain.ErrUnknowUser {
 		return err
 	}
 
-	user.HashedPassword, err = models.HashPassword(password)
-	uuidNew, err := uuid.NewUUID()
-	user.ID = uuid.UUID.String(uuidNew)
+	user.HashedPassword, err = domain.HashPassword(password)
+	user.ID = primitive.NewObjectID()
 	if err != nil {
 		return err
 	}
@@ -66,7 +65,7 @@ func (s *service) Register(user *models.User, password string) error {
 }
 
 // NewService ...
-func NewService(userRepo models.UserRepository) Service {
+func NewService(userRepo domain.UserRepository) Service {
 	return &service{
 		userRepo: userRepo,
 	}

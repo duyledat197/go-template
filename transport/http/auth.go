@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/duyledat197/go-template/models/domain"
+	"github.com/duyledat197/go-template/models/request"
+	"github.com/duyledat197/go-template/models/response"
+	"github.com/duyledat197/go-template/service/auth"
 	"github.com/go-chi/chi"
 	kitlog "github.com/go-kit/kit/log"
-	"github.com/stamp-server/models"
-	"github.com/stamp-server/service/auth"
 )
 
 type authHandler struct {
@@ -28,37 +30,31 @@ func (h *authHandler) router() chi.Router {
 
 func (h *authHandler) register(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
-	var request struct {
-		Email           string `json:"email"`
-		Password        string `json:"password"`
-		ConfirmPassword string `json:"confirmPassword"`
-	}
+	var req request.Register
 
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.logger.Log("error", err)
 		encodeError(ctx, err, w)
 		return
 	}
 
-	u := models.User{
-		Email: request.Email,
+	u := domain.User{
+		Email: req.Email,
 	}
 
-	err := h.authService.Register(&u, request.Password)
+	err := h.authService.Register(&u, req.Password)
 
 	if err != nil {
 		encodeError(ctx, err, w)
 		return
 	}
 
-	var response = struct {
-		Status string `json:"status"`
-	}{
-		Status: "success",
+	res := response.Register{
+		Success: true,
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	if err = json.NewEncoder(w).Encode(response); err != nil {
+	if err = json.NewEncoder(w).Encode(res); err != nil {
 		h.logger.Log("error", err)
 		encodeError(ctx, err, w)
 		return
@@ -67,34 +63,28 @@ func (h *authHandler) register(w http.ResponseWriter, r *http.Request) {
 
 func (h *authHandler) login(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
-	var request struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+
+	var req request.Login
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.logger.Log("error", err)
 		encodeError(ctx, err, w)
 		return
 	}
-	user, token, err := h.authService.Login(request.Email, request.Password)
+	user, token, err := h.authService.Login(req.Email, req.Password)
 	// if user exist error equal null
 	if err != nil {
 		encodeError(ctx, err, w)
 		return
 	}
 
-	var response = struct {
-		User    models.User `json:"user"`
-		Token   string      `json:"accessToken"`
-		Success bool        `json:"success"`
-	}{
+	res := response.Login{
 		User:    user,
 		Token:   token,
 		Success: true,
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	if err = json.NewEncoder(w).Encode(response); err != nil {
+	if err = json.NewEncoder(w).Encode(res); err != nil {
 		h.logger.Log("error", err)
 		encodeError(ctx, err, w)
 		return

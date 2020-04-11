@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/stamp-server/service/user"
-	"github.com/stamp-server/utils"
+	"github.com/duyledat197/go-template/service/user"
+	"github.com/duyledat197/go-template/utils"
 )
 
 // BEARER ...
