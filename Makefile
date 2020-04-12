@@ -6,3 +6,5 @@ run:
 	go run cmd/server/main.go
 test:
 	go test ./...
+install:
+	@go install ./cmd/server/.
